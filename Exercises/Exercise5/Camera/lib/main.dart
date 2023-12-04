@@ -1,8 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,6 +78,28 @@ class _CameraScreenState extends State<CameraScreen> {
     _initializeControllerFuture = _controller.initialize();
   }
 
+  Future<String> getTemporaryDirectoryPath() async {
+    final directory = await getTemporaryDirectory();
+    return directory.path;
+  }
+
+  Future<void> _takePicture() async {
+    try {
+      await _initializeControllerFuture;
+      XFile pictureFile = await _controller.takePicture();
+      String path = pictureFile.path;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DisplayPictureScreen(imagePath: path),
+        ),
+      );
+    } catch (e) {
+      print(e);
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -101,24 +123,7 @@ class _CameraScreenState extends State<CameraScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          try {
-            await _initializeControllerFuture;
-            final path = join(
-              (await getTemporaryDirectory()).path,
-              '${DateTime.now()}.png',
-            );
-            await _controller.takePicture(path);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DisplayPictureScreen(imagePath: path),
-              ),
-            );
-          } catch (e) {
-            print(e);
-          }
-        },
+        onPressed: _takePicture,
         child: Icon(Icons.camera),
       ),
     );
